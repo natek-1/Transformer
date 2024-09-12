@@ -27,8 +27,7 @@ class PositionEncoding(nn.Module):
 
         position_encoding = torch.zeros(self.seq_len, self.d_model) # (seq_len, d_model)
         position = torch.arange(0, seq_len, dtype=torch.float).unsqueeze(1) #(seq_len, 1)
-        div_term = torch.exp(torch.arange(0, self.d_model, 2).float() * (-math.log(10000.0) /  self.d_model)) # (d_model/2)
-
+        div_term = torch.exp(torch.arange(0, self.d_model, 2).float() * (-math.log(10000.0) /  self.d_model)) # (d_model/2) help with numeric stability (same result)
         position_encoding[:,0::2] = torch.sin(position * div_term) # sin to even position
         position_encoding[:,1::2] = torch.cos(position * div_term) # cos to odd position
 
@@ -41,6 +40,20 @@ class PositionEncoding(nn.Module):
         return self.dropout(x)
     
 
+class LayerNormalization(nn.Module):
+
+    def __init__(self, features: int, eps:float=10**6):
+        super().__init__()
+        self.eps = eps
+        self.alpha = nn.Parameter(torch.ones(features)) # learnable
+        self.bias = nn.Parameter(torch.zeros(features)) #learanble
+    
+    def forward(self, x):
+        # x: (batch_size, seq_len, hiddeN_size)
+        mean = x.mean(dim=-1, keepdim=True) # (batch_size, seq_len, 1)
+        std = x.std(dim=-1, keepdim=True) # (batch_size, seq_len, 1)
+
+        return self.alpha * (x - mean) / (std + self.eps) + self.bais
 
 
 
