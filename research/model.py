@@ -127,7 +127,7 @@ class ResidualConnection(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.norm = nn.LayerNorm()
     
-    def forward(self, x:float, sublayer: nn.Module):
+    def forward(self, x:float, sublayer):
         return x + self.dropout(sublayer(self.norm(x)))
     
 
@@ -140,7 +140,18 @@ class EncoderBlock(nn.Module):
         self.residual_connections = nn.ModuleList([ResidualConnection(features, dropout)] for _ in range(num_blocks))
     
     def forward(self, x, src_mask):
-        x = self.residual_connections[0](x, lambda x: self.attention_block(x, x, x, src_mask))
+        x = self.residual_connections[0](x, lambda x: self.attention_block(x, x, x, src_mask)) # here we use lambda since it is a little more complex than passing x into the module, multiple inputs are required
         x = self.residual_connections[1](x, self.feed_forward_block)
 
+class Encoder(nn.Module):
+
+    def __init__(self, features: int, layers: nn.ModuleList):
+        super.__init__()
+        self.layers = layers # list of EncoderBlocks
+        self.norm = nn.LayerNorm(features)
+    
+    def forward(self, x, mask):
+        for layer in self.layers:
+            x = layer(x, mask)
+        return self.norm(x)
     
