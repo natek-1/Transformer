@@ -48,12 +48,12 @@ class LayerNormalization(nn.Module):
         self.alpha = nn.Parameter(torch.ones(features)) # learnable
         self.bias = nn.Parameter(torch.zeros(features)) #learanble
     
-    def forward(self, x):
+    def forward(self, x: torch.Tensor):
         # x: (batch_size, seq_len, hiddeN_size)
         mean = x.mean(dim=-1, keepdim=True) # (batch_size, seq_len, 1)
-        std = x.std(dim=-1, keepdim=True) # (batch_size, seq_len, 1)
+        var = x.var(dim=-1, keepdim=True) # (batch_size, seq_len, 1)
 
-        return self.alpha * (x - mean) / (std + self.eps) + self.bais
+        return self.alpha * (x - mean) / torch.sqrt((var + self.eps) )+ self.bais
     
 class FeedForwardBlock(nn.Module):
 
@@ -87,6 +87,7 @@ class MultiheadAttentionBlock(nn.Module):
         self.W_V = nn.Linear(d_model, d_model, bias=False)
         self.W_O = nn.Linear(d_model, d_model, bias=False)
         self.dropout = nn.Dropout(dropout)
+        self.attention_scores= None
     
     @staticmethod
     def attention(query, key, value, mask, dropout: nn.Dropout):
@@ -95,6 +96,7 @@ class MultiheadAttentionBlock(nn.Module):
         attention_score = (query @ key.transpose(-2, -1)) / math.sqrt(d_k) #(batch_size, h, seq_len, seq_len)
         if mask is None:
             attention_score.masked_fill_(mask == 0, -1e9)
+        attention_score =attention_score.softmax(dim=-1)
         if dropout is not None:
             attention_score = dropout(attention_score)
 
@@ -105,13 +107,16 @@ class MultiheadAttentionBlock(nn.Module):
         key = self.W_K(k) # (batch_size, seq_len, d_model)
         value = self.W_V(v) # (batch_size, seq_len, d_model)
 
-        query = query.view(query.shape[0], query.shape[1], self.h, self.d_k).transpose(1, 2)
+        # (batch_size, seq_len, d_model) -> (batch_size, seq_len, h, d_k) -> (batch_size, h, seq_len, d_k)
+        query = query.view(query.shape[0], query.shape[1], self.h, self.d_k).transpose(1, 2) 
         key = key.view(key.shape[0], key.shape[1], self.h, self.d_k).transpose(1, 2)
         value = value.view(value.shape[0], value.shape[1], self.h, self.d_k).transpose(1, 2)
 
         x, self.attention_scores = MultiheadAttentionBlock.attention(query, key, value, self.dropout)
 
+        #(batch_size, h, seq_len, d_k) -> (batch_size, seq_len, h, d_k) -> (batch_size, -1, d_model)
         x = x.transpose(1, 2).contiguous().view(x.shape[0], -1, self.h * self.d_k)
-        return self.W_O(x)
+
+        return self.W_O(x) #batch_size, seq_len, d_model
 
 
