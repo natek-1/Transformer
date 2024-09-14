@@ -172,3 +172,14 @@ class DecoderBlock(nn.Module):
         x = self.residual_connection[2](x, self.feed_forward_block)
         return x
     
+class Decoder(nn.Module):
+
+    def __init__(self, features: int, layers: nn.ModuleList):
+        super().__init__()
+        self.layers = layers
+        self.norm = nn.LayerNorm(features)
+    
+    def forward(self, x, encoder_output, src_mask, tgt_mask):
+        for layer in self.layers:
+            x = layer(x, encoder_output, src_mask, tgt_mask)
+        return x
