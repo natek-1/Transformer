@@ -114,7 +114,7 @@ class MultiheadAttentionBlock(nn.Module):
 
         x, self.attention_scores = MultiheadAttentionBlock.attention(query, key, value, self.dropout)
 
-        #(batch_size, h, seq_len, d_k) -> (batch_size, seq_len, h, d_k) -> (batch_size, -1, d_model)
+        #(batch_size, h, seq_len, d_k) -> (batch_size, seq_len, h, d_k) -> (batch_size, seq_len, d_model)
         x = x.transpose(1, 2).contiguous().view(x.shape[0], -1, self.h * self.d_k)
 
         return self.W_O(x) #batch_size, seq_len, d_model
