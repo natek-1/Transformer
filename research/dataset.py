@@ -3,7 +3,7 @@ import torch.nn as nn
 from torch.utils.data import Dataset
 
 
-class Binlingual(Dataset):
+class BilingualDataset(Dataset):
 
     def __init__(self, ds, src_tokenizer, tgt_tokenizer, src_lang, tgt_lang, seq_len):
         super().__init__()
