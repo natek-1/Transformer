@@ -46,7 +46,7 @@ def get_dataset(config):
 
     # train val split
     train_ds_size = int(0.9 * len(ds_raw))
-    val_ds_size = int(ds_raw) - train_ds_size
+    val_ds_size = len(ds_raw) - train_ds_size
     train_ds_raw, val_ds_raw = random_split(ds_raw, [train_ds_size, val_ds_size])
 
     train_ds = BilingualDataset(train_ds_raw, src_tokenizer, tgt_tokenizer, config['lang_src'], config["lang_tgt"], config["seq_len"])
