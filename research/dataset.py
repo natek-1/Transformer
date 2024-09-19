@@ -41,19 +41,19 @@ class BilingualDataset(Dataset):
             torch.tensor(enc_input_token, dtype=torch.int64),
             self.eos_token,
             torch.tensor([self.pad_token] * enc_num_padding_tokens, dtype=torch.int64)
-        ], dim=0)
+        ], dim=0) # expected model input
 
         decoder_input = torch.cat([
             self.sos_token,
             torch.tensor(dec_input_token, dtype=torch.int64),
             torch.tensor([self.pad_token] * dec_num_padding_tokens, dtype=torch.int64)
-        ], dim=0)
+        ], dim=0) # input to decoder
 
         label = torch.cat([
             torch.tensor(dec_input_token, dtype=torch.int64),
             self.eos_token,
             torch.tensor([self.pad_token] * dec_num_padding_tokens, dtype=torch.int64)
-        ], dim=0)
+        ], dim=0) #output from decoder (model output) used during training
 
         # asinity check
         assert encoder_input.size(0) == self.seq_len
@@ -61,10 +61,10 @@ class BilingualDataset(Dataset):
         assert label.size(0) == self.seq_len
 
         return {
-            "encoder_input": encoder_input,
-            "decoder_input": decoder_input,
-            "encoder_mask": (encoder_input != self.pad_token).unsqueeze().unsqueeze().int(),
-            "decoder_mask": (decoder_input != self.pad_token).unsqueeze(0).int() & BilingualDataset.casual_mask(decoder_input.size(0)),
+            "encoder_input": encoder_input, # (seq_len)
+            "decoder_input": decoder_input, # (seq_len)
+            "encoder_mask": (encoder_input != self.pad_token).unsqueeze().unsqueeze().int(), # (1, 1, seq_len)
+            "decoder_mask": (decoder_input != self.pad_token).unsqueeze(0).int() & BilingualDataset.casual_mask(decoder_input.size(0)), # (1, seq_len) & #(1, seq_len, seq_len)
             "label": label,
             "src_text": src_text,
             "tgt_text": tgt_text
@@ -74,7 +74,7 @@ class BilingualDataset(Dataset):
     @staticmethod
     def casual_mask(size):
         mask = torch.triu(torch.ones((1, size, size)), diagonal=1).dtype(torch.int64)
-        return mask
+        return mask == 0
 
 
 
