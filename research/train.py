@@ -20,7 +20,7 @@ from tokenizers.models import WordLevel
 from tokenizers.trainers import WordLevelTrainer
 from tokenizers.pre_tokenizers import Whitespace
 
-from dataset import BilingualDataset
+from dataset import BilingualDataset, casual_mask
 from model import build_transformer
 from .config import get_config, get_weight_file_path, latest_weight_file_pat 
 
@@ -79,6 +79,32 @@ def get_model(config, vocab_src_length, target_src_length):
     model = build_transformer(src_vocab_size=vocab_src_length, tgt_vocab_size=target_src_length, src_seq_len=config["seq_len"],
                               tgt_seq_len=config["seq_len"])
     return model
+
+
+def greedy_decode(model, src_input, src_mask, src_tokenizer: Tokenizer, tgt_tokenizer: Tokenizer, max_len, device):
+    sos_idx = tgt_tokenizer.token_to_id("[SOS]")
+    eos_idx = tgt_tokenizer.token_to_id("[EOS]")
+
+    # encoder output 
+    encoder_output = model(src_input, src_mask)
+    decoder_input = torch.empty(1, 1).fill_(sos_idx).type_as(src_input).to(device)
+
+    while decoder_input.size(-1) != max_len:
+
+        decoder_mask = casual_mask(decoder_input.size(1)).type_as(src_mask).to(device)
+        out = model.decode(encoder_output, src_mask, decoder_input, decoder_mask)
+
+        prob = model.project(out[:-1])
+        _, next_word = torch.max(prob, dim=1)
+        decoder_input = torch.cat(
+            [decoder_input, torch.empty(1, 1).type_as(src_input).fill_(next_word.item()).to(device)], dim=1
+        )
+
+        if next_word == eos_idx:
+            break
+    
+    return decoder_input.squeeze(0)
+
 
 
 
