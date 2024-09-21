@@ -9,6 +9,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader, random_split
 from torch.optim.lr_scheduler import LambdaLR
+from torch.utils.tensorboard import SummaryWriter
 
 
 
@@ -21,6 +22,7 @@ from tokenizers.pre_tokenizers import Whitespace
 
 from dataset import BilingualDataset
 from model import build_transformer
+from .config import get_config, get_weight_file_path, latest_weight_file_pat 
 
 def get_all_sentences(dataset, lang):
     for item in dataset:
@@ -102,7 +104,68 @@ def train_model(config):
 
 
     train_dataloader, val_dataloader, src_tokenizer, tgt_tokenizer = get_dataset(config)
-    model = get_model(config, vocab_src_length=src_tokenizer.get_vocab_size(), target_src_length=tgt_tokenizer.get_vocab_size())
+    model = get_model(config, vocab_src_length=src_tokenizer.get_vocab_size(), target_src_length=tgt_tokenizer.get_vocab_size()).to(device)
 
+    writer = SummaryWriter(config["experiment_name"])
+
+    optimizer = torch.optim.Adam(params=model.parameters(),
+                                 eps=1e-9,
+                                 lr=config["lr"])
     
+    initial_epoch = 0
+    global_step=0
+    preload = config["preload"]
+    model_filename = latest_weight_file_pat(config) if preload == "lastest" else get_weight_file_path(config, preload) if preload else None
+    if model_filename:
+        print(f"Loading model from {model_filename}")
+        state = torch.load(model_filename)
+        model.load_state_dict(state["model_state_dict"])
+        initial_epoch = 1 + state["epoch"]
+        optimizer.load_state_dict(state['optimizer_state_dict'])
+        global_step = state['global_step']
+    else:
+        print("No model selected starting training from scratch")
+
+    loss_fn = nn.CrossEntropyLoss(ignore_index=src_tokenizer.token_to_id["[PAD]"], label_smoothing=0.1).to(device)
+
+    for epoch in range(initial_epoch, config["num_epochs"]):
+        model.train()
+        batch_iterator = tqdm(train_dataloader, desc=f"Processing Epoch: {epoch:02d}")
+        for batch in batch_iterator:
+            encoder_input = batch["encoder_input"].to(device) #(batch_size, seq_len)
+            decoder_input = batch["decoder_input"].to(device) #(batch_size, seq_len)
+            encoder_mask = batch["encoder_mask"].to(device) #(B, 1, 1, seq_len)
+            decoder_mask = batch["decoder_mask"].to(device) # (B, 1, seq_len, seq_len)
+
+            encoder_output = model.encode(encoder_input, encoder_mask) # (batch_size, seq_len, d_model)
+            decoder_output = model.decode(encoder_output, encoder_mask, decoder_input, decoder_mask) # (batch_size, seq_len, d_model)
+            proj_output = model.project(decoder_output) # (batch_size, seq_len, vocab_size)
+
+            label = batch["label"].to(device)# (batch_size, seq_len)
+
+            # loss calculations
+            loss = loss_fn(proj_output.view(-1, tgt_tokenizer.get_vocab_size(), label.view(-1)))
+            batch_iterator.set_postfix({"loss": f"{loss.item():6.3f}"})
+            # log the loss
+
+            writer.add_scaler("train_loss", loss.item(), global_step)
+            writer.flush()
+
+            loss.backward()
+
+            # Update the weights
+            optimizer.step()
+            optimizer.zero_grad(set_to_none=True)
+
+            global_step += 1
+
+
+
+
+
+
+
+
+
+
 
