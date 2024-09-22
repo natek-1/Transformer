@@ -21,9 +21,9 @@ from tokenizers.models import WordLevel
 from tokenizers.trainers import WordLevelTrainer
 from tokenizers.pre_tokenizers import Whitespace
 
-from dataset import BilingualDataset, casual_mask
+from dataset import BilingualDataset
 from model import build_transformer
-from .config import get_config, get_weight_file_path, latest_weight_file_pat 
+from config import get_config, get_weight_file_path, latest_weight_file_path
 
 def get_all_sentences(dataset, lang):
     for item in dataset:
@@ -43,7 +43,7 @@ def get_or_build_tokenizer(config, dataset, lang):
 
 def get_dataset(config):
 
-    ds_raw = load_dataset(f"{config["datasource"]}", f"{config['lang_src']}-{config['lang-tgt']}", train='train')
+    ds_raw = load_dataset(f"{config['datasource']}", f"{config['lang_src']}-{config['lang_tgt']}", split='train')
 
     # tokenizer
     src_tokenizer = get_or_build_tokenizer(config, ds_raw, config['lang_src'])
@@ -92,7 +92,7 @@ def greedy_decode(model, src_input, src_mask, src_tokenizer: Tokenizer, tgt_toke
 
     while decoder_input.size(-1) != max_len:
 
-        decoder_mask = casual_mask(decoder_input.size(1)).type_as(src_mask).to(device)
+        decoder_mask = BilingualDataset.casual_mask(decoder_input.size(1)).type_as(src_mask).to(device)
         out = model.decode(encoder_output, src_mask, decoder_input, decoder_mask)
 
         prob = model.project(out[:-1])
@@ -186,7 +186,7 @@ def train_model(config):
     device = torch.device(device)
 
     # adding the pathfolder
-    Path(f"{config["datasource"]}_{config["model_folder"]}").mkdir(parents=True, exist_ok=True)
+    Path(f"{config['datasource']}_{config['model_folder']}").mkdir(parents=True, exist_ok=True)
 
 
     train_dataloader, val_dataloader, src_tokenizer, tgt_tokenizer = get_dataset(config)
@@ -202,7 +202,7 @@ def train_model(config):
     initial_epoch = 0
     global_step=0
     preload = config["preload"]
-    model_filename = latest_weight_file_pat(config) if preload == "lastest" else get_weight_file_path(config, preload) if preload else None
+    model_filename = latest_weight_file_path(config) if preload == "lastest" else get_weight_file_path(config, preload) if preload else None
     if model_filename:
         print(f"Loading model from {model_filename}")
         state = torch.load(model_filename)
@@ -270,7 +270,7 @@ if __name__ == '__main__':
 
 
 
-
+sd
 
 
 

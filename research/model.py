@@ -212,7 +212,7 @@ class Transformer(nn.Module):
         src = self.src_pos(src)
         return self.encoder(src, src_mask)
 
-    def decode(self, encoder_otuput: torch.Tensor, src_mask: torch.tesnor, tgt: torch.Tensor, tgt_mask: torch.Tensor):
+    def decode(self, encoder_otuput: torch.Tensor, src_mask: torch.tensor, tgt: torch.Tensor, tgt_mask: torch.Tensor):
         tgt = self.tgt_embed(tgt)
         tgt = self.tgt_pos(tgt)
         return self.decoder(tgt, encoder_otuput, src_mask, tgt_mask)
