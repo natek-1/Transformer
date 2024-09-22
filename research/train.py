@@ -3,6 +3,7 @@ from pathlib import Path
 
 import torch.backends
 from tqdm import tqdm
+import warnings
 
 
 import torch
@@ -189,7 +190,8 @@ def train_model(config):
 
 
     train_dataloader, val_dataloader, src_tokenizer, tgt_tokenizer = get_dataset(config)
-    model = get_model(config, vocab_src_length=src_tokenizer.get_vocab_size(), target_src_length=tgt_tokenizer.get_vocab_size()).to(device)
+    model = get_model(config, vocab_src_length=src_tokenizer.get_vocab_size(),
+                      target_src_length=tgt_tokenizer.get_vocab_size()).to(device)
 
     writer = SummaryWriter(config["experiment_name"])
 
@@ -231,8 +233,8 @@ def train_model(config):
             # loss calculations
             loss = loss_fn(proj_output.view(-1, tgt_tokenizer.get_vocab_size(), label.view(-1)))
             batch_iterator.set_postfix({"loss": f"{loss.item():6.3f}"})
-            # log the loss
 
+            # log the loss
             writer.add_scaler("train_loss", loss.item(), global_step)
             writer.flush()
 
@@ -243,6 +245,25 @@ def train_model(config):
             optimizer.zero_grad(set_to_none=True)
 
             global_step += 1
+        # Run validation at the end of every epoch
+        run_validation(model=model, device=device, validation_dataset=val_dataloader,
+                       src_tokenizer=src_tokenizer, tgt_tokenizer=tgt_tokenizer, max_len=config["seq_len"],
+                       print_msg=lambda msg: batch_iterator.write(msg, global_step, writer))
+
+        model_filename = get_weight_file_path(config, epoch=f"{epoch:02d}")
+        torch.save(
+            {
+                "epoch": epoch,
+                "model_state_dict": model.state_dict(),
+                "optimizer_state_dict": optimizer.state_dict(),
+                "global_step": global_step,
+            }, model_filename
+        )
+
+if __name__ == '__main__':
+    warnings.filterwarnings("ignore")
+    config = get_config()
+    train_model(config)         
 
 
 
