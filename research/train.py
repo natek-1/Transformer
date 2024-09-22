@@ -8,7 +8,7 @@ from tqdm import tqdm
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader, random_split
-from torch.optim.lr_scheduler import LambdaLR
+import torchmetrics
 from torch.utils.tensorboard import SummaryWriter
 
 
@@ -106,6 +106,65 @@ def greedy_decode(model, src_input, src_mask, src_tokenizer: Tokenizer, tgt_toke
     return decoder_input.squeeze(0)
 
 
+def run_validation(model, device, validation_dataset, src_tokenizer, tgt_tokenizer, max_len, print_msg, global_step, writer, num_examples=2):
+    model.eval()
+    count = 0
+
+    source_texts = []
+    expected = []
+    predicted = []
+    try:
+        # get the console window width
+        with os.popen('stty size', 'r') as console:
+            _, console_width = console.read().split()
+            console_width = int(console_width)
+    except:
+        # If we can't get the console width, use 80 as default
+        console_width = 80
+    
+    with torch.no_grad():
+        for batch in validation_dataset:
+            count += 1
+            encoder_input = batch["encoder_input"].to(device)
+            encoder_mask = batch["encoder_mask"].to(device)
+
+            model_out = greedy_decode(model=model, src_input=encoder_input, src_mask=encoder_mask,
+                                      src_tokenizer=src_tokenizer, tgt_tokenizer=tgt_tokenizer, max_len=max_len,
+                                      device=device)
+            
+            src_text = batch["src_text"]
+            tgt_text = batch["tgt_text"]
+            model_out_text = tgt_tokenizer.decode(model_out.detach().cpu().numpy())
+
+            source_texts.append(src_text)
+            expected.append(tgt_text)
+            predicted.append(model_out)
+
+            print_msg('-'*console_width)
+            print_msg(f"{f'SOURCE: ':>12}{src_text}")
+            print_msg(f"{f'TARGET: ':>12}{tgt_text}")
+            print_msg(f"{f'PREDICTED: ':>12}{model_out_text}")
+
+            if count == num_examples:
+                print_msg('-'*console_width)
+                break
+    
+    if writer:
+
+        metric = torchmetrics.CharErrorRate()
+        cerr = metric(predicted, expected)
+        writer.add_scalar("validation cer", cerr, global_step)
+        writer.flush()
+
+        metric = torchmetrics.WordErrorRate()
+        werr = metric(predicted, expected)
+        writer.add_scalar("validation wer", werr, global_step)
+        writer.flush()
+
+        metric = torchmetrics.BLEUScore()
+        blue = metric(predicted, expected)
+        writer.add_scalar("validation blue", blue, global_step)
+        writer.flush()
 
 
 def train_model(config):
