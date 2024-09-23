@@ -30,11 +30,11 @@ def get_all_sentences(dataset, lang):
         yield item['translation'][lang]
 
 def get_or_build_tokenizer(config, dataset, lang):
-    tokenizer_path = Path(config["tokenizer_file".format(lang)])
+    tokenizer_path = Path(config["tokenizer_file"].format(lang))
     if not Path.exists(tokenizer_path):
-        tokenizer = Tokenizer(WordLevel(unk_token='["UNK]'))
+        tokenizer = Tokenizer(WordLevel(unk_token='[UNK]'))
         tokenizer.pre_tokenizer = Whitespace()
-        trainer = WordLevelTrainer(special_tokens= ["[UNK], [PAD], [SOS], [EOS]"], min_frequency=2)
+        trainer = WordLevelTrainer(special_tokens=["[UNK]", "[PAD]", "[SOS]", "[EOS]"], min_frequency=2)
         tokenizer.train_from_iterator(get_all_sentences(dataset, lang), trainer=trainer)
         tokenizer.save(str(tokenizer_path))
     else:
@@ -63,7 +63,7 @@ def get_dataset(config):
     # find max length
     for item in ds_raw:
         src_ids = src_tokenizer.encode(item['translation'][config['lang_src']]).ids
-        tgt_ids = tgt_tokenizer.encode(item['translation'][config['tgt_src']]).ids
+        tgt_ids = tgt_tokenizer.encode(item['translation'][config['lang_tgt']]).ids
 
         max_len_src = max(max_len_src, len(src_ids))
         max_len_tgt = max(max_len_tgt, len(tgt_ids))
@@ -213,7 +213,7 @@ def train_model(config):
     else:
         print("No model selected starting training from scratch")
 
-    loss_fn = nn.CrossEntropyLoss(ignore_index=src_tokenizer.token_to_id["[PAD]"], label_smoothing=0.1).to(device)
+    loss_fn = nn.CrossEntropyLoss(ignore_index=src_tokenizer.token_to_id("[PAD]"), label_smoothing=0.1).to(device)
 
     for epoch in range(initial_epoch, config["num_epochs"]):
         model.train()

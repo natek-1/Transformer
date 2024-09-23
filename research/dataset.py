@@ -63,7 +63,7 @@ class BilingualDataset(Dataset):
         return {
             "encoder_input": encoder_input, # (seq_len)
             "decoder_input": decoder_input, # (seq_len)
-            "encoder_mask": (encoder_input != self.pad_token).unsqueeze().unsqueeze().int(), # (1, 1, seq_len)
+            "encoder_mask": (encoder_input != self.pad_token).unsqueeze(0).unsqueeze(0).int(), # (1, 1, seq_len)
             "decoder_mask": (decoder_input != self.pad_token).unsqueeze(0).int() & BilingualDataset.casual_mask(decoder_input.size(0)), # (1, seq_len) & #(1, seq_len, seq_len)
             "label": label,
             "src_text": src_text,
@@ -73,7 +73,7 @@ class BilingualDataset(Dataset):
     
     @staticmethod
     def casual_mask(size):
-        mask = torch.triu(torch.ones((1, size, size)), diagonal=1).dtype(torch.int64)
+        mask = torch.triu(torch.ones((1, size, size)), diagonal=1).type(torch.int64)
         return mask == 0
 
 

@@ -112,7 +112,7 @@ class MultiheadAttentionBlock(nn.Module):
         key = key.view(key.shape[0], key.shape[1], self.h, self.d_k).transpose(1, 2)
         value = value.view(value.shape[0], value.shape[1], self.h, self.d_k).transpose(1, 2)
 
-        x, self.attention_scores = MultiheadAttentionBlock.attention(query, key, value, self.dropout)
+        x, self.attention_scores = MultiheadAttentionBlock.attention(query, key, value, mask, self.dropout)
 
         #(batch_size, h, seq_len, d_k) -> (batch_size, seq_len, h, d_k) -> (batch_size, seq_len, d_model)
         x = x.transpose(1, 2).contiguous().view(x.shape[0], -1, self.h * self.d_k)
@@ -125,7 +125,7 @@ class ResidualConnection(nn.Module):
     def __init__(self, feature: int, dropout:float):
         super().__init__()
         self.dropout = nn.Dropout(dropout)
-        self.norm = nn.LayerNorm()
+        self.norm = nn.LayerNorm(feature)
     
     def forward(self, x:float, sublayer):
         return x + self.dropout(sublayer(self.norm(x)))
@@ -136,8 +136,8 @@ class EncoderBlock(nn.Module):
     def __init__(self, features: int, self_attention: MultiheadAttentionBlock, feed_forward_block: FeedForwardBlock, dropout: float, num_blocks: int = 2):
         super().__init__()
         self.attention_block = self_attention
-        self.feed_forward_blcok = feed_forward_block
-        self.residual_connections = nn.ModuleList([ResidualConnection(features, dropout)] for _ in range(num_blocks))
+        self.feed_forward_block = feed_forward_block
+        self.residual_connections = nn.ModuleList([ResidualConnection(features, dropout) for _ in range(num_blocks)])
     
     def forward(self, x, src_mask):
         x = self.residual_connections[0](x, lambda x: self.attention_block(x, x, x, src_mask)) # here we use lambda since it is a little more complex than passing x into the module, multiple inputs are required
@@ -146,7 +146,7 @@ class EncoderBlock(nn.Module):
 class Encoder(nn.Module):
 
     def __init__(self, features: int, layers: nn.ModuleList):
-        super.__init__()
+        super().__init__()
         self.layers = layers # list of EncoderBlocks
         self.norm = nn.LayerNorm(features)
     
