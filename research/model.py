@@ -13,6 +13,7 @@ class InputEmbeddings(nn.Module):
     
     def forward(self, x: torch.Tensor):
         # (batch_size, seq_len) -->  (batch_size, seq_len, d_model)
+        # Multiply by sqrt(d_model) to scale the embeddings according to the paper
         return self.embedding(x) * math.sqrt(self.d_model)
 
 
@@ -49,7 +50,7 @@ class LayerNormalization(nn.Module):
         self.bias = nn.Parameter(torch.zeros(features)) #learanble
     
     def forward(self, x: torch.Tensor):
-        # x: (batch_size, seq_len, hiddeN_size)
+        # x: (batch_size, seq_len, hidden_size)
         mean = x.mean(dim=-1, keepdim=True) # (batch_size, seq_len, 1)
         var = x.var(dim=-1, keepdim=True) # (batch_size, seq_len, 1)
 
@@ -67,6 +68,7 @@ class FeedForwardBlock(nn.Module):
     
 
     def forward(self, x):
+        # (batch, seq_len, d_model) --> (batch, seq_len, d_ff) --> (batch, seq_len, d_model)
         return self.linear_2(self.dropout(torch.relu(self.linear_1(x))))
 
 
@@ -167,6 +169,7 @@ class DecoderBlock(nn.Module):
         self.residual_connection = nn.ModuleList([ResidualConnection(features, dropout) for _ in range(3)])
     
     def forward(self, x, encoder_output, src_mask, tgt_mask):
+        print(type(x))
         x = self.residual_connection[0](x, lambda x: self.self_attention_block(x, x,x, tgt_mask))
         x = self.residual_connection[1](x, lambda x: self.cross_attention_block(x, encoder_output, encoder_output, src_mask))
         x = self.residual_connection[2](x, self.feed_forward_block)
