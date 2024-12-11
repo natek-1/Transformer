@@ -30,8 +30,8 @@ class BilingualDataset(Dataset):
         enc_input_token = self.src_tokenizer.encode(src_text).ids
         dec_input_token = self.tgt_tokenizer.encode(tgt_text).ids
 
-        enc_num_padding_tokens = self.seq_len - len(enc_input_token) - 2
-        dec_num_padding_tokens = self.seq_len - len(dec_input_token) - 1
+        enc_num_padding_tokens = self.seq_len - len(enc_input_token) - 2 # we will add <SOS> and <EOS> token to encoding or input
+        dec_num_padding_tokens = self.seq_len - len(dec_input_token) - 1 # we will add <SOS> xor <EOS> token to input decoding for training and label repectively
 
         if enc_num_padding_tokens < 0 or dec_num_padding_tokens < 0:
             raise ValueError("Sentence is too long")

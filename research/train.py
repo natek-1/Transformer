@@ -78,7 +78,7 @@ def get_dataset(config):
 
 def get_model(config, vocab_src_length, target_src_length):
     model = build_transformer(src_vocab_size=vocab_src_length, tgt_vocab_size=target_src_length, src_seq_len=config["seq_len"],
-                              tgt_seq_len=config["seq_len"])
+                              tgt_seq_len=config["seq_len"], d_model=config['d_model'])
     return model
 
 
@@ -87,7 +87,7 @@ def greedy_decode(model, src_input, src_mask, src_tokenizer: Tokenizer, tgt_toke
     eos_idx = tgt_tokenizer.token_to_id("[EOS]")
 
     # encoder output 
-    encoder_output = model(src_input, src_mask)
+    encoder_output = model.encode(src_input, src_mask)
     decoder_input = torch.empty(1, 1).fill_(sos_idx).type_as(src_input).to(device)
 
     while decoder_input.size(-1) != max_len:
@@ -139,7 +139,7 @@ def run_validation(model, device, validation_dataset, src_tokenizer, tgt_tokeniz
 
             source_texts.append(src_text)
             expected.append(tgt_text)
-            predicted.append(model_out)
+            predicted.append(model_out_text)
 
             print_msg('-'*console_width)
             print_msg(f"{f'SOURCE: ':>12}{src_text}")
@@ -180,8 +180,6 @@ def train_model(config):
         print(f"Device name: <mps>")
     else:
         print("NOTE: If you have a GPU, consider using it for training.")
-        print("      On a Windows machine with NVidia GPU, check this video: https://www.youtube.com/watch?v=GMSjDTU8Zlc")
-        print("      On a Mac machine, run: pip3 install --pre torch torchvision torchaudio torchtext --index-url https://download.pytorch.org/whl/nightly/cpu")
 
     device = torch.device(device)
 
@@ -221,8 +219,8 @@ def train_model(config):
         for batch in batch_iterator:
             encoder_input = batch["encoder_input"].to(device) #(batch_size, seq_len)
             decoder_input = batch["decoder_input"].to(device) #(batch_size, seq_len)
-            encoder_mask = batch["encoder_mask"].to(device) #(B, 1, 1, seq_len)
-            decoder_mask = batch["decoder_mask"].to(device) # (B, 1, seq_len, seq_len)
+            encoder_mask = batch["encoder_mask"].to(device) #(batch_size, 1, 1, seq_len)
+            decoder_mask = batch["decoder_mask"].to(device) # (batch_size, 1, seq_len, seq_len)
 
             encoder_output = model.encode(encoder_input, encoder_mask) # (batch_size, seq_len, d_model)
             decoder_output = model.decode(encoder_output, encoder_mask, decoder_input, decoder_mask) # (batch_size, seq_len, d_model)
@@ -231,7 +229,7 @@ def train_model(config):
             label = batch["label"].to(device)# (batch_size, seq_len)
 
             # loss calculations
-            loss = loss_fn(proj_output.view(-1, tgt_tokenizer.get_vocab_size(), label.view(-1)))
+            loss = loss_fn(proj_output.view(-1, tgt_tokenizer.get_vocab_size()), label.view(-1))
             batch_iterator.set_postfix({"loss": f"{loss.item():6.3f}"})
 
             # log the loss
@@ -263,15 +261,4 @@ def train_model(config):
 if __name__ == '__main__':
     warnings.filterwarnings("ignore")
     config = get_config()
-    train_model(config)         
-
-
-
-
-
-
-sd
-
-
-
-
+    train_model(config)
