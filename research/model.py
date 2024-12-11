@@ -47,7 +47,7 @@ class LayerNormalization(nn.Module):
         super().__init__()
         self.eps = eps
         self.alpha = nn.Parameter(torch.ones(features)) # learnable
-        self.bias = nn.Parameter(torch.zeros(features)) #learanble
+        self.bais = nn.Parameter(torch.zeros(features)) #learanble
     
     def forward(self, x: torch.Tensor):
         # x: (batch_size, seq_len, hidden_size)
@@ -127,7 +127,7 @@ class ResidualConnection(nn.Module):
     def __init__(self, feature: int, dropout:float):
         super().__init__()
         self.dropout = nn.Dropout(dropout)
-        self.norm = nn.LayerNorm(feature)
+        self.norm = LayerNormalization(feature)
     
     def forward(self, x:float, sublayer):
         return x + self.dropout(sublayer(self.norm(x)))
@@ -150,7 +150,7 @@ class Encoder(nn.Module):
     def __init__(self, features: int, layers: nn.ModuleList):
         super().__init__()
         self.layers = layers # list of EncoderBlocks
-        self.norm = nn.LayerNorm(features)
+        self.norm = LayerNormalization(features)
     
     def forward(self, x, mask):
         for layer in self.layers:
@@ -180,7 +180,7 @@ class Decoder(nn.Module):
     def __init__(self, features: int, layers: nn.ModuleList):
         super().__init__()
         self.layers = layers
-        self.norm = nn.LayerNorm(features)
+        self.norm = LayerNormalization(features)
     
     def forward(self, x, encoder_output, src_mask, tgt_mask):
         for layer in self.layers:
