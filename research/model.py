@@ -156,7 +156,7 @@ class ResidualConnection(nn.Module):
         ##print(x)
         ##print("sublayer")
         ##print(sublayer)
-        return x + self.dropout(sublayer(self.norm(x)))
+        return self.norm(x + self.dropout(sublayer(x)))
     
 
 class EncoderBlock(nn.Module):
@@ -193,7 +193,7 @@ class Encoder(nn.Module):
         ##print(mask)
         for layer in self.layers:
             x = layer(x, mask)
-        return self.norm(x)
+        return x
     
 
 class DecoderBlock(nn.Module):

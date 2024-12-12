@@ -233,7 +233,7 @@ def train_model(config):
             batch_iterator.set_postfix({"loss": f"{loss.item():6.3f}"})
 
             # log the loss
-            writer.add_scaler("train_loss", loss.item(), global_step)
+            writer.add_scalar("train_loss", loss.item(), global_step)
             writer.flush()
 
             loss.backward()
