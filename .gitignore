@@ -164,3 +164,4 @@ cython_debug/
 # tokenizer file from hugging face
 tokenizer*
 run
+output.txt
