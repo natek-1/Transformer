@@ -14,9 +14,6 @@ class InputEmbeddings(nn.Module):
     def forward(self, x: torch.Tensor):
         # (batch_size, seq_len) -->  (batch_size, seq_len, d_model)
         # Multiply by sqrt(d_model) to scale the embeddings according to the paper
-        ##print("Inside Input Embedding")
-        ##print("x:")
-        ##print(x)
         return self.embedding(x) * math.sqrt(self.d_model)
 
 
@@ -41,8 +38,6 @@ class PositionEncoding(nn.Module):
 
     def forward(self, x: torch.Tensor):
         ##print("Inside Position Encoding")
-        ##print("x:")
-        ##print(x)
         x = x + (self.pe[:, :x.shape[1], :]).requires_grad_(False) # (batch_size, seq_len, d_model)
         return self.dropout(x)
     
@@ -57,9 +52,6 @@ class LayerNormalization(nn.Module):
     
     def forward(self, x: torch.Tensor):
         # x: (batch_size, seq_len, hidden_size)
-        ##print("Inside Layer Normalization")
-        ##print("x:")
-        ##print(x)
         mean = x.mean(dim=-1, keepdim=True) # (batch_size, seq_len, 1)
         var = x.var(dim=-1, keepdim=True) # (batch_size, seq_len, 1)
 
@@ -78,9 +70,6 @@ class FeedForwardBlock(nn.Module):
 
     def forward(self, x):
         # (batch, seq_len, d_model) --> (batch, seq_len, d_ff) --> (batch, seq_len, d_model)
-        ##print("Inside FeedForwardBlock")
-        ##print("x:")
-        ##print(x)
         return self.linear_2(self.dropout(torch.relu(self.linear_1(x))))
 
 
@@ -110,6 +99,7 @@ class MultiheadAttentionBlock(nn.Module):
         attention_score = (query @ key.transpose(-2, -1)) / math.sqrt(d_k) #(batch_size, h, seq_len, seq_len)
         if mask is None:
             attention_score.masked_fill_(mask == 0, -1e9)
+            #attention_score[mask == 0] = -1e9
         attention_score =attention_score.softmax(dim=-1)
         if dropout is not None:
             attention_score = dropout(attention_score)
@@ -117,15 +107,6 @@ class MultiheadAttentionBlock(nn.Module):
         return (attention_score @ value), attention_score
 
     def forward(self, q, k, v, mask):
-        ##print("In Multihead attention block")
-        ##print("query:")
-        ##print(q)
-        ##print("key:")
-        ##print(k)
-        ##print("value:")
-        ##print(v)
-        ##print("mask:")
-        ##print(mask)
         query = self.W_Q(q) # (batch_size, seq_len, d_model)
         key = self.W_K(k) # (batch_size, seq_len, d_model)
         value = self.W_V(v) # (batch_size, seq_len, d_model)
@@ -151,11 +132,6 @@ class ResidualConnection(nn.Module):
         self.norm = LayerNormalization(feature)
     
     def forward(self, x:float, sublayer):
-        ##print("Inside Residual Connection")
-        ##print("x:")
-        ##print(x)
-        ##print("sublayer")
-        ##print(sublayer)
         return self.norm(x + self.dropout(sublayer(x)))
     
 
@@ -168,11 +144,6 @@ class EncoderBlock(nn.Module):
         self.residual_connections = nn.ModuleList([ResidualConnection(features, dropout) for _ in range(num_blocks)])
     
     def forward(self, x, src_mask):
-        ##print("inside encoder block")
-        ##print("x:")
-        ##print(x)
-        ##print("scr mask:")
-        ##print(src_mask)
         x = self.residual_connections[0](x, lambda x: self.attention_block(x, x, x, src_mask)) # here we use lambda since it is a little more complex than passing x into the module, multiple inputs are required
         x = self.residual_connections[1](x, self.feed_forward_block)
         
@@ -186,11 +157,6 @@ class Encoder(nn.Module):
         self.norm = LayerNormalization(features)
     
     def forward(self, x, mask):
-        ##print("Inside Encoder")
-        ##print("x:")
-        ##print(x)
-        ##print("mask:")
-        ##print(mask)
         for layer in self.layers:
             x = layer(x, mask)
         return x
@@ -207,13 +173,6 @@ class DecoderBlock(nn.Module):
         self.residual_connection = nn.ModuleList([ResidualConnection(features, dropout) for _ in range(num_blocks)])
     
     def forward(self, x, encoder_output, src_mask, tgt_mask):
-        ##print("In Decoder block")
-        ##print("encoder output:")
-        ##print(encoder_output) 
-        ##print("scr mask:")
-        ##print(src_mask)
-        ##print("tgt_mask:")
-        ##print(tgt_mask)
         x = self.residual_connection[0](x, lambda x: self.self_attention_block(x, x,x, tgt_mask))
         x = self.residual_connection[1](x, lambda x: self.cross_attention_block(x, encoder_output, encoder_output, src_mask))
         x = self.residual_connection[2](x, self.feed_forward_block)
@@ -227,13 +186,6 @@ class Decoder(nn.Module):
         self.norm = LayerNormalization(features)
     
     def forward(self, x, encoder_output, src_mask, tgt_mask):
-        ##print("in decoder")
-        ##print("encoder output:")
-        ##print(encoder_output)
-        ##print("scr mask:")
-        ##print(src_mask)
-        ##print("tgt_mask:")
-        ##print(tgt_mask)
         for layer in self.layers:
             x = layer(x, encoder_output, src_mask, tgt_mask)
         return x
@@ -245,9 +197,6 @@ class ProjectionLayer(nn.Module):
         self.proj = nn.Linear(d_model, vocab_size)
     
     def forward(self, x):
-        ##print("In projection layer")
-        ##print("x:")
-        ##print(x)
         return self.proj(x)
 
 
@@ -265,25 +214,11 @@ class Transformer(nn.Module):
         self.proj_layer = proj_layer
     
     def encode(self, src, src_mask):
-        ##print("In transformer encode")
-        ##print("src:")
-        ##print(src)
-        ##print("scr mask:")
-        ##print(src_mask)
         src = self.src_embed(src)
         src = self.src_pos(src)
         return self.encoder(src, src_mask)
 
     def decode(self, encoder_otuput: torch.Tensor, src_mask: torch.tensor, tgt: torch.Tensor, tgt_mask: torch.Tensor):
-        ##print("In transformer decode")
-        ##print("encoder output:")
-        ##print(encoder_otuput)
-        ##print("scr mask:")
-        ##print(src_mask)
-        ##print("tgt:")
-        ##print(tgt)
-        ##print("tgt_mask:")
-        ##print(tgt_mask)
         tgt = self.tgt_embed(tgt)
         tgt = self.tgt_pos(tgt)
         return self.decoder(tgt, encoder_otuput, src_mask, tgt_mask)

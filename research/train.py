@@ -95,7 +95,7 @@ def greedy_decode(model, src_input, src_mask, src_tokenizer: Tokenizer, tgt_toke
         decoder_mask = BilingualDataset.casual_mask(decoder_input.size(1)).type_as(src_mask).to(device)
         out = model.decode(encoder_output, src_mask, decoder_input, decoder_mask)
 
-        prob = model.project(out[:-1])
+        prob = model.project(out[:,-1])
         _, next_word = torch.max(prob, dim=1)
         decoder_input = torch.cat(
             [decoder_input, torch.empty(1, 1).type_as(src_input).fill_(next_word.item()).to(device)], dim=1
@@ -246,7 +246,7 @@ def train_model(config):
         # Run validation at the end of every epoch
         run_validation(model=model, device=device, validation_dataset=val_dataloader,
                        src_tokenizer=src_tokenizer, tgt_tokenizer=tgt_tokenizer, max_len=config["seq_len"],
-                       print_msg=lambda msg: batch_iterator.write(msg, global_step, writer))
+                       print_msg=lambda msg: batch_iterator.write(msg), global_step=global_step, writer=writer)
 
         model_filename = get_weight_file_path(config, epoch=f"{epoch:02d}")
         torch.save(
