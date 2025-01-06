@@ -107,7 +107,8 @@ def greedy_decode(model, src_input, src_mask, src_tokenizer: Tokenizer, tgt_toke
     return decoder_input.squeeze(0)
 
 
-def run_validation(model, device, validation_dataset, src_tokenizer, tgt_tokenizer, max_len, print_msg, global_step, writer, num_examples=2):
+def run_validation(model, device, validation_dataset, src_tokenizer, tgt_tokenizer,
+                   max_len, print_msg, global_step, writer, num_examples=10):
     model.eval()
     count = 0
 
