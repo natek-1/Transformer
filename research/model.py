@@ -26,15 +26,15 @@ class PositionEncoding(nn.Module):
         self.dropout = nn.Dropout(dropout)
 
 
-        position_encoding = torch.zeros(self.seq_len, self.d_model) # (seq_len, d_model)
-        position = torch.arange(0, seq_len, dtype=torch.float).unsqueeze(1) #(seq_len, 1)
-        div_term = torch.exp(torch.arange(0, self.d_model, 2).float() * (-math.log(10000.0) /  self.d_model)) # (d_model/2) help with numeric stability (same result)
-        position_encoding[:,0::2] = torch.sin(position * div_term) # sin to even position
-        position_encoding[:,1::2] = torch.cos(position * div_term) # cos to odd position
+        pe = torch.zeros(self.seq_len, self.d_model) # (seq_len, d_model)
+        position = torch.arange(0, seq_len, dtype=torch.float).unsqueeze(1) # (seq_len, 1)
+        div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model))# (d_model/2) help with numeric stability (same result)
+        pe[:, 0::2] = torch.sin(position * div_term) # sin(position * (10000 ** (2i / d_model))
+        pe[:, 1::2] = torch.cos(position * div_term) # cos(position * (10000 ** (2i / d_model))
 
         # add dimention for batch_size
-        position_encoding = position_encoding.unsqueeze(0)  # (1, seq_len, d_model)
-        self.register_buffer("pe", position_encoding)
+        pe = pe.unsqueeze(0)  # (1, seq_len, d_model)
+        self.register_buffer("pe", pe)
 
     def forward(self, x: torch.Tensor):
         ##print("Inside Position Encoding")
@@ -44,18 +44,19 @@ class PositionEncoding(nn.Module):
 
 class LayerNormalization(nn.Module):
 
-    def __init__(self, features: int, eps:float=10**6):
+    def __init__(self, features: int, eps:float=10**-6):
         super().__init__()
         self.eps = eps
         self.alpha = nn.Parameter(torch.ones(features)) # learnable
-        self.bais = nn.Parameter(torch.zeros(features)) #learanble
+        self.bias = nn.Parameter(torch.zeros(features)) #learanble
     
     def forward(self, x: torch.Tensor):
         # x: (batch_size, seq_len, hidden_size)
-        mean = x.mean(dim=-1, keepdim=True) # (batch_size, seq_len, 1)
-        var = x.var(dim=-1, keepdim=True) # (batch_size, seq_len, 1)
+        mean = x.mean(dim = -1, keepdim = True) # (batch, seq_len, 1)
+        # Keep the dimension for broadcasting
+        std = x.std(dim = -1, keepdim = True) # (batch, seq_len, 1)
 
-        return self.alpha * (x - mean) / torch.sqrt((var + self.eps) )+ self.bais
+        return self.alpha * (x - mean) / (std + self.eps) + self.bias
     
 class FeedForwardBlock(nn.Module):
 
@@ -97,10 +98,10 @@ class MultiheadAttentionBlock(nn.Module):
         d_k = query.shape[-1]
 
         attention_score = (query @ key.transpose(-2, -1)) / math.sqrt(d_k) #(batch_size, h, seq_len, seq_len)
-        if mask is None:
+        if mask is not None:
             attention_score.masked_fill_(mask == 0, -1e9)
             #attention_score[mask == 0] = -1e9
-        attention_score =attention_score.softmax(dim=-1)
+        attention_score = attention_score.softmax(dim=-1)
         if dropout is not None:
             attention_score = dropout(attention_score)
 
@@ -159,7 +160,7 @@ class Encoder(nn.Module):
     def forward(self, x, mask):
         for layer in self.layers:
             x = layer(x, mask)
-        return x
+        return self.norm(x)
     
 
 class DecoderBlock(nn.Module):
@@ -173,7 +174,7 @@ class DecoderBlock(nn.Module):
         self.residual_connection = nn.ModuleList([ResidualConnection(features, dropout) for _ in range(num_blocks)])
     
     def forward(self, x, encoder_output, src_mask, tgt_mask):
-        x = self.residual_connection[0](x, lambda x: self.self_attention_block(x, x,x, tgt_mask))
+        x = self.residual_connection[0](x, lambda x: self.self_attention_block(x, x, x, tgt_mask))
         x = self.residual_connection[1](x, lambda x: self.cross_attention_block(x, encoder_output, encoder_output, src_mask))
         x = self.residual_connection[2](x, self.feed_forward_block)
         return x
@@ -188,7 +189,7 @@ class Decoder(nn.Module):
     def forward(self, x, encoder_output, src_mask, tgt_mask):
         for layer in self.layers:
             x = layer(x, encoder_output, src_mask, tgt_mask)
-        return x
+        return self.norm(x)
 
 class ProjectionLayer(nn.Module):
     
@@ -218,10 +219,10 @@ class Transformer(nn.Module):
         src = self.src_pos(src)
         return self.encoder(src, src_mask)
 
-    def decode(self, encoder_otuput: torch.Tensor, src_mask: torch.tensor, tgt: torch.Tensor, tgt_mask: torch.Tensor):
+    def decode(self, encoder_output: torch.Tensor, src_mask: torch.tensor, tgt: torch.Tensor, tgt_mask: torch.Tensor):
         tgt = self.tgt_embed(tgt)
         tgt = self.tgt_pos(tgt)
-        return self.decoder(tgt, encoder_otuput, src_mask, tgt_mask)
+        return self.decoder(tgt, encoder_output, src_mask, tgt_mask)
 
     def project(self, x):
         return self.proj_layer(x)
