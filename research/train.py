@@ -108,7 +108,7 @@ def greedy_decode(model, src_input, src_mask, src_tokenizer: Tokenizer, tgt_toke
 
 
 def run_validation(model, device, validation_dataset, src_tokenizer, tgt_tokenizer,
-                   max_len, print_msg, global_step, writer, num_examples=10):
+                   max_len, print_msg, global_step, writer, num_examples=5):
     model.eval()
     count = 0
 
@@ -152,21 +152,29 @@ def run_validation(model, device, validation_dataset, src_tokenizer, tgt_tokeniz
                 break
     
     if writer:
+        try:
+            metric = torchmetrics.CharErrorRate()
+            cerr = metric(predicted, expected)
+            writer.add_scalar("validation cer", cerr, global_step)
+            writer.flush()
+        except:
+            pass
 
-        metric = torchmetrics.CharErrorRate()
-        cerr = metric(predicted, expected)
-        writer.add_scalar("validation cer", cerr, global_step)
-        writer.flush()
+        try:
+            metric = torchmetrics.WordErrorRate()
+            werr = metric(predicted, expected)
+            writer.add_scalar("validation wer", werr, global_step)
+            writer.flush()
+        except:
+            pass
 
-        metric = torchmetrics.WordErrorRate()
-        werr = metric(predicted, expected)
-        writer.add_scalar("validation wer", werr, global_step)
-        writer.flush()
-
-        metric = torchmetrics.BLEUScore()
-        blue = metric(predicted, expected)
-        writer.add_scalar("validation blue", blue, global_step)
-        writer.flush()
+        try:
+            metric = torchmetrics.BLEUScore()
+            blue = metric(predicted, expected)
+            writer.add_scalar("validation blue", blue, global_step)
+            writer.flush()
+        except:
+            pass
 
 
 def train_model(config):

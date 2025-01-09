@@ -54,9 +54,9 @@ class LayerNormalization(nn.Module):
         # x: (batch_size, seq_len, hidden_size)
         mean = x.mean(dim = -1, keepdim = True) # (batch, seq_len, 1)
         # Keep the dimension for broadcasting
-        std = x.var(dim = -1, keepdim = True) # (batch, seq_len, 1)
+        var = x.var(dim = -1, keepdim = True) # (batch, seq_len, 1)
 
-        return self.alpha * (x - mean) / torch.sqrt(std + self.eps) + self.bias
+        return self.alpha * (x - mean) / torch.sqrt(var+ self.eps) + self.bias
     
 class FeedForwardBlock(nn.Module):
 
@@ -133,7 +133,7 @@ class ResidualConnection(nn.Module):
         self.norm = LayerNormalization(feature)
     
     def forward(self, x:float, sublayer):
-        return self.norm(x + self.dropout(sublayer(x)))
+        return x + self.norm(self.dropout(sublayer(x)))
     
 
 class EncoderBlock(nn.Module):
