@@ -54,9 +54,9 @@ class LayerNormalization(nn.Module):
         # x: (batch_size, seq_len, hidden_size)
         mean = x.mean(dim = -1, keepdim = True) # (batch, seq_len, 1)
         # Keep the dimension for broadcasting
-        std = x.std(dim = -1, keepdim = True) # (batch, seq_len, 1)
+        std = x.var(dim = -1, keepdim = True) # (batch, seq_len, 1)
 
-        return self.alpha * (x - mean) / (std + self.eps) + self.bias
+        return self.alpha * (x - mean) / torch.sqrt(std + self.eps) + self.bias
     
 class FeedForwardBlock(nn.Module):
 
