@@ -1,7 +1,6 @@
+import math
 import torch
 import torch.nn as nn
-import math
-
 
 class InputEmbeddings(nn.Module):
 
@@ -56,7 +55,7 @@ class LayerNormalization(nn.Module):
         # Keep the dimension for broadcasting
         var = x.var(dim = -1, keepdim = True) # (batch, seq_len, 1)
 
-        return self.alpha * (x - mean) / torch.sqrt(var+ self.eps) + self.bias
+        return self.alpha * (x - mean) / torch.sqrt(var + self.eps) + self.bias
     
 class FeedForwardBlock(nn.Module):
 
@@ -72,8 +71,6 @@ class FeedForwardBlock(nn.Module):
     def forward(self, x):
         # (batch, seq_len, d_model) --> (batch, seq_len, d_ff) --> (batch, seq_len, d_model)
         return self.linear_2(self.dropout(torch.relu(self.linear_1(x))))
-
-
 
 
 class MultiheadAttentionBlock(nn.Module):
