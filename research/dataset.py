@@ -34,12 +34,6 @@ class BilingualDataset(Dataset):
         dec_num_padding_tokens = self.seq_len - len(dec_input_token) - 1 # we will add <SOS> xor <EOS> token to input decoding for training and label repectively
 
         if enc_num_padding_tokens < 0 or dec_num_padding_tokens < 0:
-            print("Source Sentence:", src_text)
-            print("Source Length(non-token length):", len(src_text))
-            print("Source Length(token length):", len(enc_input_token))
-            print("Target Sentence:", tgt_text)
-            print("Target Length(non-token length):", len(tgt_text))
-            print("Target Length(token length):", len(dec_input_token))
             raise ValueError("Sentence is too long")
 
         encoder_input = torch.cat([
@@ -70,7 +64,7 @@ class BilingualDataset(Dataset):
             "encoder_input": encoder_input, # (seq_len)
             "decoder_input": decoder_input, # (seq_len)
             "encoder_mask": (encoder_input != self.pad_token).unsqueeze(0).unsqueeze(0).int(), # (1, 1, seq_len)
-            "decoder_mask": (decoder_input != self.pad_token).unsqueeze(0).int() & BilingualDataset.casual_mask(decoder_input.size(0)), # (1, seq_len) & #(1, seq_len, seq_len)
+            "decoder_mask": (decoder_input != self.pad_token).unsqueeze(0).unsqueeze(0).int() & BilingualDataset.casual_mask(decoder_input.size(0)), # (1, 1, seq_len) & #(1, seq_len, seq_len)
             "label": label,
             "src_text": src_text,
             "tgt_text": tgt_text

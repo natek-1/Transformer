@@ -134,8 +134,8 @@ def run_validation(model, device, validation_dataset, src_tokenizer, tgt_tokeniz
                                       src_tokenizer=src_tokenizer, tgt_tokenizer=tgt_tokenizer, max_len=max_len,
                                       device=device)
             
-            src_text = batch["src_text"]
-            tgt_text = batch["tgt_text"]
+            src_text = batch["src_text"][0]
+            tgt_text = batch["tgt_text"][0]
             model_out_text = tgt_tokenizer.decode(model_out.detach().cpu().numpy())
 
             source_texts.append(src_text)
@@ -179,7 +179,6 @@ def run_validation(model, device, validation_dataset, src_tokenizer, tgt_tokeniz
 
 def train_model(config):
     device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
-
     print(f"Using {device} for training")
 
     if (device == 'cuda'):
@@ -223,9 +222,9 @@ def train_model(config):
     loss_fn = nn.CrossEntropyLoss(ignore_index=src_tokenizer.token_to_id("[PAD]"), label_smoothing=0.1).to(device)
 
     for epoch in range(initial_epoch, config["num_epochs"]):
-        model.train()
         batch_iterator = tqdm(train_dataloader, desc=f"Processing Epoch: {epoch:02d}")
         for batch in batch_iterator:
+            model.train()
             encoder_input = batch["encoder_input"].to(device) #(batch_size, seq_len)
             decoder_input = batch["decoder_input"].to(device) #(batch_size, seq_len)
             encoder_mask = batch["encoder_mask"].to(device) #(batch_size, 1, 1, seq_len)
