@@ -1,0 +1,8 @@
+artifacts_root: artifacts
+
+
+data_ingestion:
+  datasource: opus_books
+  lang_src: en
+  lang_tgt: fr
+  save_dir: artifacts/opus_books

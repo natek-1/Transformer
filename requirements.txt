@@ -10,4 +10,6 @@ altair==5.1.1
 wandb==0.15.9
 numpy==1.25.1
 torchdata==0.8.0
+python-box==6.0.2
+ensure==1.0.2
 -e .

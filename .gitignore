@@ -168,3 +168,4 @@ output.txt
 test.ipynb
 model_2.py
 opus_books_weights
+artifacts/
