@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeepL Translator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header class="main-header">
+        <div class="header-content">
+            <div class="logo-container">
+                <span class="logo-deepl">Machine Translation</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="translator-section">
+            <div class="translator-container">
+                <div class="text-box">
+                    <h2>English</h2>
+                    <textarea id="englishText" placeholder="Enter text to translate..."></textarea>
+                </div>
+                <button onclick="translateText()">Translate →</button>
+                <div class="text-box">
+                    <h2>French <button onclick="copyToClipboard()">Copy</button></h2>
+                    <div id="frenchText" class="translation-output"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="about-section">
+            <h3>About This Translator</h3>
+            <p>This translation system is implemented using a PyTorch model based on the transformer architecture described in the "Attention Is All You Need" paper. The model utilizes multi-head self-attention mechanisms to capture contextual relationships between words, enabling high-quality translations.</p>
+            <p>Special thanks to the open-source community and the researchers who contributed to advancing neural machine translation technologies.</p>
+        </div>
+    </div>
+
+    <script>
+        // Previous JavaScript code remains the same
+        function translateText() {
+            const text = document.getElementById('englishText').value;
+            
+            fetch('/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: `english_text=${encodeURIComponent(text)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('frenchText').textContent = data.french_text;
+            });
+        }
+
+        function copyToClipboard() {
+            const text = document.getElementById('frenchText').textContent;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Text copied to clipboard!');
+            });
+        }
+    </script>
+</body>
+</html>
