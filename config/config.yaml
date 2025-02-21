@@ -6,3 +6,11 @@ data_ingestion:
   lang_src: en
   lang_tgt: fr
   save_dir: artifacts/opus_books
+
+
+build_tokenizer:
+  data_dir: artifacts/opus_books
+  src_lang: en
+  tgt_lang: fr
+  tokenizer_file: "artifacts/tokenizer_{0}.json"
+
