@@ -1,5 +1,6 @@
 from transformer.configuration.configuration import ConfigurationManager
 from transformer.components.data_ingestion import DataIngestion
+from transformer.components.data_validation import DataValidation
 from transformer.components.data_transformation import DataTransformation
 from transformer.logger import logging
 
@@ -16,6 +17,20 @@ class TrainingPipeline:
         data_ingestion = DataIngestion(config=data_ingestion_config)
         data_ingestion.download_data()
         logging.info("Data Ingestion Completed")
+        
+        # Data Validation
+        logging.info("Starting Data Validation")
+        data_validation_config = config.get_data_validation_config()
+        data_validation = DataValidation(config=data_validation_config)
+        data_validation_artifact = data_validation.validate_data()
+        
+        if not data_validation_artifact.validation_status:
+            logging.warning(f"Data validation warning: {data_validation_artifact.message}")
+            logging.warning("Proceeding with transformation, but some sequences may be truncated")
+        
+        logging.info(f"Max source length: {data_validation_artifact.max_src_length}")
+        logging.info(f"Max target length: {data_validation_artifact.max_tgt_length}")
+        logging.info("Data Validation Completed")
         
         # Data Transformation
         logging.info("Starting Data Transformation")

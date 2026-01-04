@@ -18,3 +18,11 @@ class DataTransformationConfig:
     lang_src: str
     lang_tgt: str
     
+@dataclass(frozen=True)
+class DataValidationConfig:
+    root_dir: Path
+    data_path: Path
+    lang_src: str
+    lang_tgt: str
+    seq_len: int
+    

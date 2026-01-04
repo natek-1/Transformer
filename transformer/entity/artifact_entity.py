@@ -12,3 +12,10 @@ class DataTransformationArtifact:
     transformed_val_file_path: Path
     src_tokenizer_file_path: Path
     tgt_tokenizer_file_path: Path
+
+@dataclass(frozen=True)
+class DataValidationArtifact:
+    validation_status: bool
+    max_src_length: int
+    max_tgt_length: int
+    message: str

@@ -1,12 +1,10 @@
 artifacts_root: artifacts
 
-
 data_ingestion:
   datasource: opus_books
   lang_src: en
   lang_tgt: fr
   save_dir: artifacts/opus_books
-
 
 build_tokenizer:
   data_dir: artifacts/opus_books
@@ -19,3 +17,6 @@ data_transformation:
   data_path: artifacts/opus_books
   tokenizer_file: "tokenizer_{0}.json"
 
+data_validation:
+  root_dir: artifacts/data_validation
+  data_path: artifacts/opus_books

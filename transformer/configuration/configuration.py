@@ -1,4 +1,4 @@
-from transformer.entity.config_entity import DataIngestionConfig, DataTransformationConfig
+from transformer.entity.config_entity import DataIngestionConfig, DataTransformationConfig, DataValidationConfig
 from transformer.constants import CONFIG_FILE_PATH, PARAMS_FILE_PATH
 from transformer.utils.main_utils import create_directories, read_yaml
 
@@ -40,3 +40,16 @@ class ConfigurationManager:
         )
 
         return data_transformation_config
+
+    def get_data_validation_config(self) -> DataValidationConfig:
+        config = self.config.data_validation
+
+        data_validation_config = DataValidationConfig(
+            root_dir=config.root_dir,
+            data_path=config.data_path,
+            lang_src=config.lang_src if hasattr(config, 'lang_src') else self.config.data_ingestion.lang_src,
+            lang_tgt=config.lang_tgt if hasattr(config, 'lang_tgt') else self.config.data_ingestion.lang_tgt,
+            seq_len=self.params.model_config.seq_len
+        )
+
+        return data_validation_config
