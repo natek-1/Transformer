@@ -34,7 +34,7 @@ setup(
     version="0.0.1",
     author="Nathan Kuissi",
     author_email="nategabrielk@icloud.com",
-    description="A python package reproducing the work done in 'PaliGemma: A versatile 3B VLM for transfer'",
+    description="A python repository for training the transformer model inspired by the 'attention is all you need paper''",
     url=f"https://github.com/{AUTHOR_USER_NAME}/{REPO_NAME}",
     long_description=long_description,
     long_description_content="text/markdown",
