@@ -14,3 +14,8 @@ build_tokenizer:
   tgt_lang: fr
   tokenizer_file: "artifacts/tokenizer_{0}.json"
 
+data_transformation:
+  root_dir: artifacts/data_transformation
+  data_path: artifacts/opus_books
+  tokenizer_file: "tokenizer_{0}.json"
+
