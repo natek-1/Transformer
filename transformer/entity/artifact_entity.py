@@ -18,4 +18,9 @@ class DataValidationArtifact:
     validation_status: bool
     max_src_length: int
     max_tgt_length: int
+    max_tgt_length: int
     message: str
+
+@dataclass(frozen=True)
+class ModelTrainerArtifact:
+    trained_model_file_path: Path

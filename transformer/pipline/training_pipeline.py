@@ -2,6 +2,7 @@ from transformer.configuration.configuration import ConfigurationManager
 from transformer.components.data_ingestion import DataIngestion
 from transformer.components.data_validation import DataValidation
 from transformer.components.data_transformation import DataTransformation
+from transformer.components.model_trainer import ModelTrainer
 from transformer.logger import logging
 
 class TrainingPipeline:
@@ -39,7 +40,14 @@ class TrainingPipeline:
         data_transformation_artifact = data_transformation.initiate_data_transformation()
         logging.info("Data Transformation Completed")
         
-        return data_transformation_artifact
+        # Model Training
+        logging.info("Starting Model Training")
+        model_trainer_config = config.get_model_trainer_config()
+        model_trainer = ModelTrainer(config=model_trainer_config)
+        model_trainer_artifact = model_trainer.initiate_model_trainer()
+        logging.info("Model Training Completed")
+        
+        return model_trainer_artifact
 
 if __name__ == "__main__":
     try:

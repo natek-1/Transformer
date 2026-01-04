@@ -1,4 +1,4 @@
-from transformer.entity.config_entity import DataIngestionConfig, DataTransformationConfig, DataValidationConfig
+from transformer.entity.config_entity import DataIngestionConfig, DataTransformationConfig, DataValidationConfig, ModelTrainerConfig
 from transformer.constants import CONFIG_FILE_PATH, PARAMS_FILE_PATH
 from transformer.utils.main_utils import create_directories, read_yaml
 
@@ -53,3 +53,25 @@ class ConfigurationManager:
         )
 
         return data_validation_config
+
+    def get_model_trainer_config(self) -> ModelTrainerConfig:
+        config = self.config.model_trainer
+        params = self.params.model_config
+
+        create_directories([config.root_dir])
+
+        model_trainer_config = ModelTrainerConfig(
+            root_dir=config.root_dir,
+            data_path=config.data_path,
+            model_name=config.model_name,
+            seq_len=params.seq_len,
+            d_model=params.d_model,
+            lr=params.learning_rate,
+            num_epochs=params.num_epochs,
+            pre_load=False,
+            batch_size=params.batch_size,
+            lang_src=self.config.data_ingestion.lang_src,
+            lang_tgt=self.config.data_ingestion.lang_tgt
+        )
+
+        return model_trainer_config

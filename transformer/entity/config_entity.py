@@ -26,3 +26,16 @@ class DataValidationConfig:
     lang_tgt: str
     seq_len: int
     
+@dataclass(frozen=True)
+class ModelTrainerConfig:
+    root_dir: Path
+    data_path: Path
+    model_name: str
+    seq_len: int
+    d_model: int
+    lr: float
+    num_epochs: int
+    pre_load: bool
+    batch_size: int
+    lang_src: str
+    lang_tgt: str
