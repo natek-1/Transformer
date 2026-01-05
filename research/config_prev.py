@@ -10,7 +10,7 @@ def get_config():
         "datasource": "opus_books",
         "lang_src": "en",
         "lang_tgt": "it",
-        "model_folder": "weights",
+        "model_folder": "weightsv6",
         "model_basename": "tmodel_",
         "preload": None,
         "tokenizer_file": "tokenizer_{0}.json",
