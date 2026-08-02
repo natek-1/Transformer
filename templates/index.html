@@ -3,64 +3,180 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DeepL Translator</title>
+    <title>Transformer Translate</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <header class="main-header">
         <div class="header-content">
             <div class="logo-container">
-                <span class="logo-deepl">Machine Translation</span>
+                <span class="logo-mark">◆</span>
+                <span class="logo-text">Transformer Translate</span>
             </div>
         </div>
     </header>
 
-    <div class="container">
-        <div class="translator-section">
+    <main class="container">
+        <div class="translator-card">
             <div class="translator-container">
-                <div class="text-box">
-                    <h2>English</h2>
-                    <textarea id="englishText" placeholder="Enter text to translate..."></textarea>
+                <section class="text-box source-box">
+                    <div class="text-box-header">
+                        <span class="lang-label">English</span>
+                    </div>
+                    <textarea
+                        id="sourceText"
+                        placeholder="Type or paste text to translate..."
+                        maxlength="2000"
+                        autofocus
+                    ></textarea>
+                    <div class="text-box-footer">
+                        <span id="charCount" class="char-count">0 / 2000</span>
+                        <button id="clearBtn" class="icon-btn" type="button" title="Clear text">Clear</button>
+                    </div>
+                </section>
+
+                <div class="divider" aria-hidden="true">
+                    <span class="arrow">→</span>
                 </div>
-                <button onclick="translateText()">Translate →</button>
-                <div class="text-box">
-                    <h2>French <button onclick="copyToClipboard()">Copy</button></h2>
-                    <div id="frenchText" class="translation-output"></div>
-                </div>
+
+                <section class="text-box target-box">
+                    <div class="text-box-header">
+                        <span class="lang-label">French</span>
+                    </div>
+                    <div class="translation-output-wrap">
+                        <div id="targetText" class="translation-output" aria-live="polite"></div>
+                        <div id="loadingIndicator" class="loading-indicator hidden">
+                            <span class="spinner"></span>
+                            <span>Translating…</span>
+                        </div>
+                    </div>
+                    <div class="text-box-footer">
+                        <span id="errorMsg" class="error-msg hidden"></span>
+                        <button id="copyBtn" class="icon-btn" type="button" title="Copy translation">Copy</button>
+                    </div>
+                </section>
             </div>
         </div>
 
-        <div class="about-section">
-            <h3>About This Translator</h3>
-            <p>This translation system is implemented using a PyTorch model based on the transformer architecture described in the "Attention Is All You Need" paper. The model utilizes multi-head self-attention mechanisms to capture contextual relationships between words, enabling high-quality translations.</p>
-            <p>Special thanks to the open-source community and the researchers who contributed to advancing neural machine translation technologies.</p>
-        </div>
-    </div>
+        <section class="about-section">
+            <h3>About this translator</h3>
+            <p>This translator is powered by a Transformer model built from scratch in PyTorch, following the
+                architecture described in "Attention Is All You Need". It uses multi-head self-attention to model
+                relationships between words and generates translations token-by-token using greedy decoding.</p>
+            <p>Currently supports English → French. A version trained with a longer 512-token context is in
+                progress.</p>
+        </section>
+    </main>
 
     <script>
-        // Previous JavaScript code remains the same
-        function translateText() {
-            const text = document.getElementById('englishText').value;
-            
-            fetch('/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: `english_text=${encodeURIComponent(text)}`
-            })
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('frenchText').textContent = data.french_text;
-            });
+        const sourceText = document.getElementById('sourceText');
+        const targetText = document.getElementById('targetText');
+        const charCount = document.getElementById('charCount');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const errorMsg = document.getElementById('errorMsg');
+        const clearBtn = document.getElementById('clearBtn');
+        const copyBtn = document.getElementById('copyBtn');
+
+        const MAX_CHARS = 2000;
+        const DEBOUNCE_MS = 450;
+
+        let debounceTimer = null;
+        let activeController = null;
+        let requestSeq = 0;
+
+        function updateCharCount() {
+            charCount.textContent = `${sourceText.value.length} / ${MAX_CHARS}`;
         }
 
-        function copyToClipboard() {
-            const text = document.getElementById('frenchText').textContent;
-            navigator.clipboard.writeText(text).then(() => {
-                alert('Text copied to clipboard!');
-            });
+        function showError(message) {
+            errorMsg.textContent = message;
+            errorMsg.classList.remove('hidden');
         }
+
+        function clearError() {
+            errorMsg.textContent = '';
+            errorMsg.classList.add('hidden');
+        }
+
+        function setLoading(isLoading) {
+            loadingIndicator.classList.toggle('hidden', !isLoading);
+        }
+
+        async function translateText() {
+            const text = sourceText.value.trim();
+            clearError();
+
+            if (activeController) {
+                activeController.abort();
+            }
+
+            if (!text) {
+                targetText.textContent = '';
+                setLoading(false);
+                return;
+            }
+
+            const seq = ++requestSeq;
+            const controller = new AbortController();
+            activeController = controller;
+            setLoading(true);
+
+            try {
+                const response = await fetch('/api/translate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text }),
+                    signal: controller.signal,
+                });
+
+                const data = await response.json().catch(() => ({}));
+
+                if (seq !== requestSeq) return; // superseded by a newer request
+
+                if (!response.ok) {
+                    showError(data.error || 'Something went wrong. Please try again.');
+                    targetText.textContent = '';
+                    return;
+                }
+
+                targetText.textContent = data.translation || '';
+            } catch (err) {
+                if (err.name === 'AbortError') return;
+                if (seq !== requestSeq) return;
+                showError('Could not reach the translation server.');
+                targetText.textContent = '';
+            } finally {
+                if (seq === requestSeq) setLoading(false);
+            }
+        }
+
+        sourceText.addEventListener('input', () => {
+            updateCharCount();
+            if (debounceTimer) clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(translateText, DEBOUNCE_MS);
+        });
+
+        clearBtn.addEventListener('click', () => {
+            sourceText.value = '';
+            targetText.textContent = '';
+            updateCharCount();
+            clearError();
+            sourceText.focus();
+        });
+
+        copyBtn.addEventListener('click', async () => {
+            const text = targetText.textContent;
+            if (!text) return;
+            try {
+                await navigator.clipboard.writeText(text);
+                copyBtn.textContent = 'Copied!';
+                setTimeout(() => (copyBtn.textContent = 'Copy'), 1500);
+            } catch (err) {
+                showError('Could not copy to clipboard.');
+            }
+        });
+
+        updateCharCount();
     </script>
 </body>
 </html>

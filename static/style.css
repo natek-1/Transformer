@@ -1,139 +1,238 @@
+:root {
+    --deepl-blue: #0f2b46;
+    --accent: #1266f1;
+    --accent-dark: #0d4fbf;
+    --border-color: #dcdfe4;
+    --bg: #f5f7fa;
+    --text-main: #1a1a1a;
+    --text-muted: #6b7280;
+    --error-color: #c0392b;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg);
+    color: var(--text-main);
+}
+
 .main-header {
     background-color: #ffffff;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    border-bottom: 1px solid var(--border-color);
     padding: 1rem 0;
-    margin-bottom: 2rem;
 }
 
 .header-content {
-    max-width: 1200px;
+    max-width: 1100px;
     margin: 0 auto;
     padding: 0 20px;
 }
 
 .logo-container {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 10px;
 }
 
-.logo-deepl {
-    font-size: 2rem;
-    font-weight: bold;
-    color: #007bff;
-}
-
-.logo-translator {
-    font-size: 1.5rem;
-    color: #665;
-}
-
-/* Modify the container style */
-.container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 20px;
-}
-
-/* Add about section styles */
-.about-section {
-    margin-top: 40px;
-    padding: 30px;
-    background-color: #f8f9fa;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
-.about-section h3 {
-    color: #333;
-    margin-bottom: 15px;
+.logo-mark {
+    color: var(--accent);
     font-size: 1.4rem;
 }
 
-.about-section p {
-    color: #667;
-    line-height: 1.6;
-    margin-bottom: 15px;
-}
-
-/* Keep previous translator styles */
-.translator-container {
-    display: flex;
-    gap: 20px;
-    justify-content: center;
-    margin-top: 30px;
-}
-
-.text-box {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    width: 45%;
-}
-
-body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 20px;
-    background-color: #f5f5f5;
+.logo-text {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--deepl-blue);
 }
 
 .container {
-    max-width: 1200px;
+    max-width: 1100px;
     margin: 0 auto;
+    padding: 32px 20px 60px;
 }
 
-h1 {
-    text-align: center;
-    color: #333;
+.translator-card {
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(15, 43, 70, 0.08);
+    overflow: hidden;
 }
 
 .translator-container {
     display: flex;
-    gap: 20px;
-    justify-content: center;
-    margin-top: 30px;
+    align-items: stretch;
 }
 
 .text-box {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    width: 45%;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
 }
 
-textarea {
+.source-box {
+    border-right: 1px solid var(--border-color);
+}
+
+.text-box-header {
+    padding: 14px 20px 0;
+}
+
+.lang-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+#sourceText {
     width: 100%;
-    height: 300px;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    resize: vertical;
-}
-
-button {
-    background-color: #007bff;
-    color: white;
+    min-height: 280px;
+    padding: 12px 20px;
     border: none;
-    padding: 10px 20px;
-    border-radius: 4px;
-    cursor: pointer;
-    align-self: center;
-    height: fit-content;
+    outline: none;
+    resize: vertical;
+    font-size: 1.1rem;
+    font-family: inherit;
+    line-height: 1.5;
+    color: var(--text-main);
+    background: transparent;
 }
 
-button:hover {
-    background-color: #0056b3;
+#sourceText::placeholder {
+    color: var(--text-muted);
+}
+
+.translation-output-wrap {
+    position: relative;
+    flex: 1;
 }
 
 .translation-output {
     width: 100%;
-    height: 300px;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    overflow-y: auto;
+    min-height: 280px;
+    padding: 12px 20px;
+    font-size: 1.1rem;
+    line-height: 1.5;
     white-space: pre-wrap;
+    word-wrap: break-word;
+    color: var(--text-main);
+}
+
+.text-box-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 20px 14px;
+    min-height: 28px;
+}
+
+.char-count {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.icon-btn {
+    background: none;
+    border: 1px solid var(--border-color);
+    color: var(--deepl-blue);
+    font-size: 0.85rem;
+    padding: 4px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.icon-btn:hover {
+    background-color: #f0f4f9;
+    border-color: var(--accent);
+}
+
+.divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 0;
+}
+
+.divider .arrow {
+    display: none;
+}
+
+.error-msg {
+    font-size: 0.85rem;
+    color: var(--error-color);
+}
+
+.error-msg.hidden,
+.loading-indicator.hidden {
+    display: none;
+}
+
+.loading-indicator {
+    position: absolute;
+    top: 12px;
+    left: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.95rem;
+    color: var(--text-muted);
+}
+
+.spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--border-color);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.about-section {
+    margin-top: 32px;
+    padding: 28px 30px;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(15, 43, 70, 0.06);
+}
+
+.about-section h3 {
+    color: var(--deepl-blue);
+    margin-bottom: 12px;
+    font-size: 1.2rem;
+}
+
+.about-section p {
+    color: var(--text-muted);
+    line-height: 1.6;
+    margin-bottom: 12px;
+}
+
+@media (max-width: 720px) {
+    .translator-container {
+        flex-direction: column;
+    }
+
+    .source-box {
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    #sourceText,
+    .translation-output {
+        min-height: 180px;
+    }
 }
