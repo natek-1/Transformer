@@ -161,6 +161,9 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
+
+.vscode
+
 # tokenizer file from hugging face
 tokenizer*
 run
@@ -169,3 +172,8 @@ test.ipynb
 model_2.py
 opus_books_weights
 artifacts/
+
+
+## runs
+runs/*
+weightsv*

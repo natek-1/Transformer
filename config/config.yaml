@@ -15,7 +15,10 @@ build_tokenizer:
 data_transformation:
   root_dir: artifacts/data_transformation
   data_path: artifacts/opus_books
+  dataset_path: artifacts/data
   tokenizer_file: "tokenizer_{0}.json"
+  src_lang: en
+  tgt_lang: fr
 
 data_validation:
   root_dir: artifacts/data_validation
@@ -23,5 +26,6 @@ data_validation:
 
 model_trainer:
   root_dir: artifacts/model_trainer
+  dataset_path: artifacts/data
   data_path: artifacts/data_transformation
   model_name: model.pt

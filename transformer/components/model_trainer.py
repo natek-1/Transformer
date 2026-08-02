@@ -17,6 +17,8 @@ from transformer.model.model import build_transformer
 from transformer.logger import logging
 from transformer.exception import CustomException
 
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
 class ModelTrainer:
     def __init__(self, config: ModelTrainerConfig):
         self.config = config
@@ -99,8 +101,8 @@ class ModelTrainer:
             logging.info("Starting Model Training")
             
             # 1. Load Data
-            train_data_path = os.path.join(self.config.data_path, "train")
-            val_data_path = os.path.join(self.config.data_path, "val")
+            train_data_path = os.path.join(self.config.dataset_path, "train")
+            val_data_path = os.path.join(self.config.dataset_path, "val")
             
             logging.info(f"Loading training data from {train_data_path}")
             train_ds_loaded = load_from_disk(train_data_path)
@@ -108,10 +110,6 @@ class ModelTrainer:
             val_ds_loaded = load_from_disk(val_data_path)
             
             # 2. Tokenizers
-            # Assuming standard naming or passed in config. 
-            # In previous steps we formatted it. Let's reconstruct path or just find them in data_transformation folder
-            # Actually config.data_path points to artifacts/data_transformation/ which contains train, val directories AND tokenizers
-            
             tokenizer_path_src = Path(self.config.data_path) / f"tokenizer_{self.config.lang_src}.json"
             tokenizer_path_tgt = Path(self.config.data_path) / f"tokenizer_{self.config.lang_tgt}.json"
             
@@ -123,7 +121,8 @@ class ModelTrainer:
             train_ds = BilingualDataset(train_ds_loaded, src_tokenizer, tgt_tokenizer, self.config.lang_src, self.config.lang_tgt, self.config.seq_len)
             val_ds = BilingualDataset(val_ds_loaded, src_tokenizer, tgt_tokenizer, self.config.lang_src, self.config.lang_tgt, self.config.seq_len)
             
-            train_dataloader = DataLoader(train_ds, batch_size=self.config.batch_size, shuffle=True)
+            train_dataloader = DataLoader(train_ds, batch_size=self.config.batch_size, shuffle=True,
+                                        num_workers=12, prefetch_factor=64)
             val_dataloader = DataLoader(val_ds, batch_size=1, shuffle=True)
             
             # 4. Model
@@ -134,7 +133,7 @@ class ModelTrainer:
             model = self.get_model(src_tokenizer.get_vocab_size(), tgt_tokenizer.get_vocab_size()).to(device)
             
             # 5. Training Setup
-            optimizer = torch.optim.Adam(model.parameters(), lr=self.config.lr, eps=1e-9)
+            optimizer = torch.optim.Adam(model.parameters(), lr=float(self.config.lr), eps=1e-9)
             loss_fn = nn.CrossEntropyLoss(ignore_index=src_tokenizer.token_to_id("[PAD]"), label_smoothing=0.1).to(device)
             
             # Tensorboard

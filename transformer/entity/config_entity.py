@@ -17,6 +17,7 @@ class DataTransformationConfig:
     batch_size: int
     lang_src: str
     lang_tgt: str
+    dataset_path: str
     
 @dataclass(frozen=True)
 class DataValidationConfig:
@@ -29,6 +30,7 @@ class DataValidationConfig:
 @dataclass(frozen=True)
 class ModelTrainerConfig:
     root_dir: Path
+    dataset_path: Path
     data_path: Path
     model_name: str
     seq_len: int

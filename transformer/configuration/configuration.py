@@ -36,7 +36,8 @@ class ConfigurationManager:
             seq_len=self.params.model_config.seq_len,
             batch_size=self.params.model_config.batch_size,
             lang_src=config.lang_src if hasattr(config, 'lang_src') else self.config.data_ingestion.lang_src,
-            lang_tgt=config.lang_tgt if hasattr(config, 'lang_tgt') else self.config.data_ingestion.lang_tgt
+            lang_tgt=config.lang_tgt if hasattr(config, 'lang_tgt') else self.config.data_ingestion.lang_tgt,
+            dataset_path=config.dataset_path,
         )
 
         return data_transformation_config
@@ -61,8 +62,9 @@ class ConfigurationManager:
         create_directories([config.root_dir])
 
         model_trainer_config = ModelTrainerConfig(
-            root_dir=config.root_dir,
             data_path=config.data_path,
+            root_dir=config.root_dir,
+            dataset_path=config.dataset_path,
             model_name=config.model_name,
             seq_len=params.seq_len,
             d_model=params.d_model,

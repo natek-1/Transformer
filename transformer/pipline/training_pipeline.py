@@ -1,3 +1,5 @@
+import os
+
 from transformer.configuration.configuration import ConfigurationManager
 from transformer.components.data_ingestion import DataIngestion
 from transformer.components.data_validation import DataValidation
@@ -15,11 +17,13 @@ class TrainingPipeline:
         # Data Ingestion
         logging.info("Starting Data Ingestion")
         data_ingestion_config = config.get_data_ingestion_config()
-        data_ingestion = DataIngestion(config=data_ingestion_config)
-        data_ingestion.download_data()
+        if not os.path.exists(data_ingestion_config.save_dir):
+            data_ingestion = DataIngestion(config=data_ingestion_config)
+            data_ingestion.download_data()
         logging.info("Data Ingestion Completed")
         
         # Data Validation
+
         logging.info("Starting Data Validation")
         data_validation_config = config.get_data_validation_config()
         data_validation = DataValidation(config=data_validation_config)
@@ -39,7 +43,6 @@ class TrainingPipeline:
         data_transformation = DataTransformation(config=data_transformation_config)
         data_transformation_artifact = data_transformation.initiate_data_transformation()
         logging.info("Data Transformation Completed")
-        
         # Model Training
         logging.info("Starting Model Training")
         model_trainer_config = config.get_model_trainer_config()

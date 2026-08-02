@@ -1,6 +1,10 @@
 import os
 import sys
-from datasets import load_from_disk
+
+from tqdm import tqdm
+
+from datasets import load_dataset
+
 from tokenizers import Tokenizer
 from tokenizers.models import WordLevel
 from tokenizers.trainers import WordLevelTrainer
@@ -33,7 +37,9 @@ class DataValidation:
             logging.info("Starting data validation")
             
             # Load data
-            ds_raw = load_from_disk(str(self.config.data_path))
+            ds_raw = load_dataset('json',
+                                data_files=f'opus_books_{self.config.lang_src}_{self.config.lang_tgt}.json',
+                                split = 'train')
             logging.info(f"Loaded dataset with {len(ds_raw)} examples")
             
             # Build tokenizers for validation
@@ -46,7 +52,7 @@ class DataValidation:
             max_len_tgt = 0
             
             logging.info("Calculating maximum sequence lengths")
-            for item in ds_raw:
+            for item in tqdm(ds_raw, leave=False, desc="Validating full dataset"):
                 src_ids = src_tokenizer.encode(item['translation'][self.config.lang_src]).ids
                 tgt_ids = tgt_tokenizer.encode(item['translation'][self.config.lang_tgt]).ids
                 
@@ -71,7 +77,7 @@ class DataValidation:
                 logging.warning(message)
             
             if validation_status:
-                logging.info(f"✓ All sequences fit within configured seq_len ({self.config.seq_len})")
+                logging.info(f"All sequences fit within configured seq_len ({self.config.seq_len})")
             
             data_validation_artifact = DataValidationArtifact(
                 validation_status=validation_status,
