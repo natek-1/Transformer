@@ -7,9 +7,11 @@ web UI for interactive translation.
 
 ## Contents
 
+- [Project overview](#project-overview)
 - [Architecture](#architecture)
 - [Repository layout](#repository-layout)
 - [Setup](#setup)
+- [Downloading the trained model](#downloading-the-trained-model)
 - [Configuration](#configuration)
 - [Running the training pipeline](#running-the-training-pipeline)
 - [Known issue: data path mismatch](#known-issue-data-path-mismatch)
@@ -17,6 +19,55 @@ web UI for interactive translation.
 - [Translating from the command line](#translating-from-the-command-line)
 - [Logs and artifacts](#logs-and-artifacts)
 - [Citation](#citation)
+
+## Project overview
+
+This project is an end-to-end machine translation system: it takes English
+sentences and translates them into French. What makes it notable is that
+the core AI model — a Transformer, the same type of neural network
+architecture behind tools like ChatGPT and Google Translate — was **built
+entirely from scratch in PyTorch**, rather than using a pre-built model or
+library. Every piece (the attention mechanism, positional encoding, encoder
+and decoder stacks) was implemented by hand, based directly on the original
+2017 research paper ["Attention Is All You Need"](https://arxiv.org/abs/1706.03762)
+that introduced this architecture.
+
+**What it does:** a user types an English sentence into a web page, and the
+model translates it into French in real time — similar to how DeepL or
+Google Translate works, but powered by a custom-trained model rather than a
+commercial API.
+
+**How it was built, at a high level:**
+
+- **Data**: ~127,000 English-French sentence pairs from the [`opus_books`](https://huggingface.co/datasets/opus_books)
+  dataset (translated literary text), split into training and validation
+  sets.
+- **Tokenization**: raw text is broken into word-level tokens with a
+  vocabulary built separately for each language.
+- **Model**: a from-scratch Transformer (6 encoder layers, 6 decoder
+  layers, 8 attention heads, ~512-dimensional embeddings — roughly 65
+  million parameters) is trained to predict the French translation of each
+  English sentence, one word at a time.
+- **Training**: the model is trained for many passes (epochs) over the
+  dataset, using techniques like label smoothing and learning rate
+  scheduling to improve translation quality and generalization.
+- **Serving**: the trained model is wrapped in a Flask web application with
+  a clean, DeepL-style interface, so it can be tried out interactively in a
+  browser.
+
+**Why this project is interesting from an engineering standpoint:**
+
+- It demonstrates understanding of modern deep learning architecture
+  (attention mechanisms, encoder-decoder models) at the implementation
+  level, not just as a black-box library call.
+- It includes a modular, config-driven training pipeline (data ingestion →
+  validation → transformation → training) rather than a single monolithic
+  script, showing familiarity with production-style ML project structure.
+- It ships a working, usable product (the web UI) on top of the model,
+  covering the full path from research paper to a deployable application.
+
+The sections below go into the technical details for anyone who wants to
+run, train, or extend the project.
 
 ## Architecture
 
@@ -76,9 +127,10 @@ used at training (see [Running the web UI](#running-the-web-ui)).
   calls `translate.py` under the hood.
 - **`config/config.yaml`**, **`config/params.yaml`** — pipeline and model
   configuration (see [Configuration](#configuration)).
-- **`weightsv5_final_seq_len_update_required/`** — checkpoints from the
-  currently shipped training run (`tmodel_00.pt` … `tmodel_14.pt`), trained
-  at `seq_len=350`.
+- **`weightsv5_final_seq_len_update_required/`** — where the trained
+  checkpoint (`tmodel_14.pt`, trained at `seq_len=350`) is expected to
+  live. Not checked into the repo due to size (~1.1 GB) — see
+  [Downloading the trained model](#downloading-the-trained-model).
 - **`tokenizer_en.json`**, **`tokenizer_fr.json`** — word-level tokenizers
   matching the shipped checkpoint, used by `translate.py`.
 - **`research/`**, **`train_*.py`**, **`load_model.py`**,
@@ -152,6 +204,62 @@ pip install -r requirements.txt
 `requirements.txt` includes `-e .`, which installs this repo itself (via
 `setup.py`) as an editable package named `transformer`, so the
 `transformer.*` modules are importable from anywhere in the environment.
+
+## Downloading the trained model
+
+The trained checkpoint isn't checked into this repo (it's ~1.1 GB, and
+`weightsv*` is git-ignored — see `.gitignore`). It's hosted on Google
+Drive instead:
+
+**Download link:** [tmodel_14.pt on Google Drive](https://drive.google.com/file/d/REPLACE_WITH_FILE_ID/view?usp=sharing)
+
+> The link above is a placeholder — replace it with the real share link
+> once the file is uploaded to Google Drive (right-click the file → Share
+> → "Anyone with the link" → copy link).
+
+Only `tmodel_14.pt` (the final, epoch-14 checkpoint) is needed to run the
+web UI or CLI — you don't need the other per-epoch snapshots.
+
+1. Create the destination folder (if it doesn't already exist) and
+   download the file into it:
+
+   ```bash
+   mkdir -p weightsv5_final_seq_len_update_required
+   ```
+
+   Then either:
+   - **Download via browser**: open the link above, click "Download", and
+     move the file into `weightsv5_final_seq_len_update_required/` so the
+     final path is
+     `weightsv5_final_seq_len_update_required/tmodel_14.pt`.
+   - **Download via CLI** with [`gdown`](https://github.com/wkentaro/gdown)
+     (`pip install gdown`), which handles Google Drive's large-file
+     confirmation step automatically:
+
+     ```bash
+     pip install gdown
+     gdown "https://drive.google.com/uc?id=REPLACE_WITH_FILE_ID" \
+       -O weightsv5_final_seq_len_update_required/tmodel_14.pt
+     ```
+
+     (the file ID is the long string in the Drive share link, between
+     `/d/` and `/view`).
+
+2. Verify the file landed in the right place and is the expected size
+   (~1.1 GB):
+
+   ```bash
+   ls -lh weightsv5_final_seq_len_update_required/tmodel_14.pt
+   ```
+
+3. Make sure `tokenizer_en.json` and `tokenizer_fr.json` are present at
+   the repo root (these *are* checked into the repo) — they're required
+   alongside the checkpoint and must match the vocabulary it was trained
+   with.
+
+Once the checkpoint is in place, `translate.py` (and therefore both the
+web UI and the CLI) will pick it up automatically — see
+[Running the web UI](#running-the-web-ui).
 
 ## Configuration
 
@@ -233,7 +341,10 @@ trained checkpoint, calling into `translate.py` for inference.
 1. Make sure you have a trained checkpoint and tokenizers available. By
    default `translate.py` is configured to load:
    - Checkpoint: `weightsv5_final_seq_len_update_required/tmodel_14.pt`
-   - Tokenizers: `tokenizer_en.json`, `tokenizer_fr.json` (repo root)
+     (see [Downloading the trained model](#downloading-the-trained-model)
+     if you don't have this yet)
+   - Tokenizers: `tokenizer_en.json`, `tokenizer_fr.json` (repo root,
+     checked into the repo)
    - `SEQ_LEN = 350`, `D_MODEL = 512` — **`SEQ_LEN` must match the
      `seq_len` the checkpoint was trained with**, since the positional
      encoding buffers are sized to it at build time (see
