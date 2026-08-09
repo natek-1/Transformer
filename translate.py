@@ -4,10 +4,6 @@ Inference module for the English -> French Transformer translator.
 Loads the trained checkpoint (weightsv5_final_seq_len_update_required/tmodel_14.pt),
 the source/target tokenizers, and exposes a single `translate(text)` function that
 performs greedy decoding.
-
-Note: this checkpoint was trained with seq_len=350 (a newer 512-seq_len version is
-still training), so SEQ_LEN is pinned to 350 here to match the saved positional
-encoding buffers.
 """
 import os
 import threading
@@ -22,11 +18,11 @@ from transformer.model.model import build_transformer
 # ---------------------------------------------------------------------------
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-SEQ_LEN = 350  # must match the checkpoint's positional encoding buffer size
+SEQ_LEN = 512  # must match the checkpoint's positional encoding buffer size
 D_MODEL = 512
 
 CHECKPOINT_PATH = os.path.join(
-    BASE_DIR, "weightsv5_final_seq_len_update_required", "tmodel_14.pt"
+    BASE_DIR, "artifacts", "model_trainer" ,"model.pt"
 )
 TOKENIZER_SRC_PATH = os.path.join(BASE_DIR, "tokenizer_en.json")
 TOKENIZER_TGT_PATH = os.path.join(BASE_DIR, "tokenizer_fr.json")
