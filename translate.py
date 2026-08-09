@@ -24,8 +24,12 @@ D_MODEL = 512
 CHECKPOINT_PATH = os.path.join(
     BASE_DIR, "artifacts", "model_trainer" ,"model.pt"
 )
-TOKENIZER_SRC_PATH = os.path.join(BASE_DIR, "tokenizer_en.json")
-TOKENIZER_TGT_PATH = os.path.join(BASE_DIR, "tokenizer_fr.json")
+TOKENIZER_SRC_PATH = os.path.join(
+    BASE_DIR, "artifacts", "data_transformation", "tokenizer_en.json"
+)
+TOKENIZER_TGT_PATH = os.path.join(
+    BASE_DIR, "artifacts", "data_transformation", "tokenizer_fr.json"
+)
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

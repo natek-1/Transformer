@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
 
-MAX_INPUT_CHARS = 2000
+MAX_INPUT_CHARS = 500
 
 
 @app.route("/", methods=["GET"])

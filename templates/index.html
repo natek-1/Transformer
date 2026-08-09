@@ -26,11 +26,11 @@
                     <textarea
                         id="sourceText"
                         placeholder="Type or paste text to translate..."
-                        maxlength="2000"
+                        maxlength="500"
                         autofocus
                     ></textarea>
                     <div class="text-box-footer">
-                        <span id="charCount" class="char-count">0 / 2000</span>
+                        <span id="charCount" class="char-count">0 / 500</span>
                         <button id="clearBtn" class="icon-btn" type="button" title="Clear text">Clear</button>
                     </div>
                 </section>
@@ -63,8 +63,7 @@
             <p>This translator is powered by a Transformer model built from scratch in PyTorch, following the
                 architecture described in "Attention Is All You Need". It uses multi-head self-attention to model
                 relationships between words and generates translations token-by-token using greedy decoding.</p>
-            <p>Currently supports English → French. A version trained with a longer 512-token context is in
-                progress.</p>
+            <p>Currently supports English → French</p>
         </section>
     </main>
 
@@ -77,7 +76,7 @@
         const clearBtn = document.getElementById('clearBtn');
         const copyBtn = document.getElementById('copyBtn');
 
-        const MAX_CHARS = 2000;
+        const MAX_CHARS = 500;
         const DEBOUNCE_MS = 450;
 
         let debounceTimer = null;
